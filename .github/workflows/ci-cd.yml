@@ -1,0 +1,62 @@
+name: Pipeline CI/CD - Sistema de Donaciones
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Pruebas Unitarias y Cobertura (Pytest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ejecutar pruebas unitarias con reporte de cobertura
+        run: |
+          pytest --cov=app --cov-report=term-missing --cov-report=xml tests/
+
+      - name: Guardar artefacto de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-cobertura
+          path: coverage.xml
+
+  build:
+    name: Compilación / Verificación de Artefactos
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Verificación de estructura del proyecto
+        run: |
+          python -m compileall app/
+          echo "Compilación en Python verificada exitosamente."
+
+  deploy:
+    name: Despliegue Automático en Entorno de Pruebas
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Simulación de Despliegue
+        run: |
+          echo "Desplegando en el servidor Staging..."
+          echo "Despliegue finalizado con éxito."
